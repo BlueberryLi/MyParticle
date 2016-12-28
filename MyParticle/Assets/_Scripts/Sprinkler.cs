@@ -4,6 +4,9 @@ using System.Collections;
 public class Sprinkler : MonoBehaviour {
     private float heightAboveFloor;
     private ParticleSystem[] sprinklers;
+    private ParticleCollisionEvent[][] collisionEvents;
+    private GameObject barrel;
+    private Fire fire;
     void Awake()
     {
         sprinklers = GetComponentsInChildren<ParticleSystem>();
@@ -11,6 +14,9 @@ public class Sprinkler : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         heightAboveFloor = transform.position.y;
+        collisionEvents = new ParticleCollisionEvent[sprinklers.Length][];
+        barrel = GameObject.FindWithTag("FireBarrel");
+        fire = barrel.GetComponent<Fire>();
 	}
 	
 	// Update is called once per frame
@@ -45,4 +51,36 @@ public class Sprinkler : MonoBehaviour {
             }
         }
 	}
+
+    void OnParticleCollision(GameObject other)
+    {
+        if (other.tag == "FireBarrel")
+        {
+            for (int i = 0; i < collisionEvents.Length; i++)
+            {
+                collisionEvents[i] = new ParticleCollisionEvent[sprinklers[i].GetSafeCollisionEventSize()];
+            }
+            for (int i = 0; i < collisionEvents.Length; i++)
+            {
+                sprinklers[i].GetCollisionEvents(gameObject, collisionEvents[i]);
+            }
+            for (int i = 0; i < collisionEvents.Length; i++)
+            {
+                for (int j = 0; j < collisionEvents[i].Length; j++)
+                {
+                    foreach(ParticleHelper ph in fire.particles)
+                    {
+                        if (ph.varyAlpha)
+                            ph.DecreaseAlpha();
+                        if (ph.varyEmission)
+                            ph.DecreaseEmission();
+                        if (ph.varyIntensity)
+                            ph.DecreaseIntensity();
+                        if (ph.varyRange)
+                            ph.DecreaseRange();
+                    }
+                }
+            }
+        }
+    }
 }
